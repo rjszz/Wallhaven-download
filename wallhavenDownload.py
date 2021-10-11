@@ -16,6 +16,7 @@ wallHavenUrlBase = ""
 
 """
 参数配置
+parser set
 """
 def parserInit():
     parser.add_argument('--mode', '-m', required=True, choices=['toplist', 'latest', 'hot'],help='爬取图片模式')
@@ -25,6 +26,7 @@ def parserInit():
 
 """
 初始化
+init function
 """
 def init():
     parserInit()
@@ -38,7 +40,7 @@ def init():
     print(wallHavenUrlBase)
     
     # 创建文件保存目录
-    # os.makedirs(args.savePath, exist_ok=True)
+    os.makedirs(args.savePath, exist_ok=True)
 
 """
 通过wget获取下载图片
@@ -56,7 +58,9 @@ def curlGet(url):
 
 """
 将get请求结果转化为dict
+Convert the response into a dict
 结果结构:
+result struct:
 {
 "data":[
     "id":   "72rxqo"
@@ -68,7 +72,7 @@ def curlGet(url):
 ]
 }
 """
-def handleResponseRes(responseResBytes):
+def handleResponseRes(responseResBytes) -> dict:
     try:  
         responseResStr = str(responseResBytes, encoding = "utf-8")  
         responseResDict = json.loads(responseResStr)
@@ -78,9 +82,43 @@ def handleResponseRes(responseResBytes):
         print("结果转化错误:{}".format(e))
         return None
 
+
+"""
+下载单张图片
+downlaod single picture
+"""
+def downloadOnePic():
+    pass
+
+"""
+获取可下载图片
+列表形式保存，每项保存了单张图片的 id,尺寸,url
+get downloadable pictures
+return: the list that saves every picture's info, include id,resolution and url
+"""
+def getPendingPicUrl(wallHavenUrl) -> list:
+    responseRes = curlGet(wallHavenUrl)
+    responseResDict = handleResponseRes(responseRes)
+
+    PendingPicUrlList = []
+    for _, PicMsg in responseResDict["data"]:
+        PicMsgMain = {
+            'id': PicMsg['id'],
+            'resolution': PicMsg['resolution'],
+            'url': PicMsg['path'],
+        }
+        PendingPicUrlList.append(PicMsgMain)
+    
+    return PendingPicUrlList
+
+
 """
 主流程
+main process
 """
+def WallhavenDownload():
+    init()
+
 
 if __name__ == "__main__":
     # wget("https://w.wallhaven.cc/full/72/wallhaven-72rxqo.jpg", "72rxqo.jpg")
