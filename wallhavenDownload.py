@@ -1,5 +1,5 @@
 """
-爬取wallhaven的toplist图片
+爬取wallhaven的toplist,latest,hot图片
 author: rjszz
 """
 
@@ -81,7 +81,6 @@ def handleResponseRes(responseResBytes) -> dict:
     try:  
         responseResStr = str(responseResBytes, encoding = "utf-8")  
         responseResDict = json.loads(responseResStr)
-        print(responseResDict["data"][0]['path'])
         return responseResDict
     except Exception as e:
         print("[error]结果转化错误:{}".format(e))
@@ -98,11 +97,7 @@ def downloadOnePic(targetPic: map):
     url = targetPic['url']
     picType = targetPic['fileType']
     
-    savePath = "{}/{}".format(args.savePath, resolution)
-    if not os.path.exists(savePath):
-        os.mkdir(savePath)
-
-    picPath = "{}/{}.{}".format(savePath, id, picTypeMap[picType])
+    picPath = "{}/{}_{}.{}".format(args.savePath, resolution, id, picTypeMap[picType])
 
     print("[info]正在下载图片\tID:{}\t规格为:{}\t下载url:{}\t文件保存路径:{}".format(id, resolution, url, picPath))
     if os.path.isfile(picPath):
@@ -123,6 +118,10 @@ def getPendingPicUrl(wallHavenUrl) -> list:
     responseResDict = handleResponseRes(responseRes)
 
     pendingPicUrlList = []
+    if not responseResDict.get("data"):
+        print("[error]获取图片列表失败")
+        exit(1)
+    
     for PicMsg in responseResDict["data"]:
         PicMsgMain = {
             'id': PicMsg['id'],
