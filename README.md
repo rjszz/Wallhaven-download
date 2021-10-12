@@ -3,6 +3,8 @@
 
 ## 使用
 
+使用前先替换`wallhavenDownload.py`中的`APIKey`为自己的APIkey
+
 ```bash
 python3 wallhavenDownload.py -m toplist --savePath ~/Pic --maxPage 1
 ```

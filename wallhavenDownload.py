@@ -1,4 +1,5 @@
 """
+wallhavenDownload.py
 爬取wallhaven的toplist,latest,hot图片
 author: rjszz
 """
