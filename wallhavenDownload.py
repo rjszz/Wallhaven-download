@@ -9,19 +9,20 @@ import os
 
 #参数解析
 parser = argparse.ArgumentParser()
+parser.add_argument('--mode', '-m', required=True, choices=['toplist', 'latest', 'hot'],help='爬取图片模式')
+parser.add_argument('--savePath', required=True, help='图片保存路径')
+parser.add_argument('--maxPage', default=5, help='最大页数')
+args = parser.parse_args()
 
 APIKey = "y6L3vWvPfZSDbxilkIiyZrM4nGZSAhST"
 
 wallHavenUrlBase = ""
 
-"""
-参数配置
-parser set
-"""
-def parserInit():
-    parser.add_argument('--mode', '-m', required=True, choices=['toplist', 'latest', 'hot'],help='爬取图片模式')
-    parser.add_argument('--savePath', required=True, help='图片保存路径')
-    parser.add_argument('--maxPage', default=5, help='最大页数')
+picTypeMap = {
+    'image/png': 'png',
+    'image/jpeg': 'jpg',
+}
+    
 
 
 """
@@ -29,21 +30,22 @@ def parserInit():
 init function
 """
 def init():
-    parserInit()
-
+    
     args = parser.parse_args()
     
     #设置需要爬取的url
+    #set target url
     global wallHavenUrlBase
     wallHavenUrlBase = "https://wallhaven.cc/api/v1/search?apikey={}&topRange=1M&sorting={}&page=".format(APIKey, args.mode)
     
-    print(wallHavenUrlBase)
     
     # 创建文件保存目录
+    # create dir which save the picture
     os.makedirs(args.savePath, exist_ok=True)
 
 """
 通过wget获取下载图片
+download pictrue by wget
 """
 def wget(url, savePath):
     subprocess.run(["wget", "-O", savePath, url])
@@ -51,6 +53,7 @@ def wget(url, savePath):
 
 """
 curl 实现get请求
+get by curl
 """
 def curlGet(url):
     res = subprocess.run(["curl", "-XGET", "-L", url, "--max-time", "60", "--retry", "3"], stdout=subprocess.PIPE).stdout
@@ -79,7 +82,7 @@ def handleResponseRes(responseResBytes) -> dict:
         print(responseResDict["data"][0]['path'])
         return responseResDict
     except Exception as e:
-        print("结果转化错误:{}".format(e))
+        print("[error]结果转化错误:{}".format(e))
         return None
 
 
@@ -87,8 +90,25 @@ def handleResponseRes(responseResBytes) -> dict:
 下载单张图片
 downlaod single picture
 """
-def downloadOnePic():
-    pass
+def downloadOnePic(targetPic: map):
+    id = targetPic['id']
+    resolution = targetPic['resolution']
+    url = targetPic['url']
+    picType = targetPic['fileType']
+    
+    savePath = "{}/{}".format(args.savePath, resolution)
+    if not os.path.exists(savePath):
+        os.mkdir(savePath)
+
+    picPath = "{}/{}.{}".format(savePath, id, picTypeMap[picType])
+
+    print("[info]正在下载图片\tID:{}\t规格为:{}\t下载url:{}\t文件保存路径:{}".format(id, resolution, url, picPath))
+    if os.path.isfile(picPath):
+        print("[warning]图片已存在\n")
+        return
+    
+    wget(url, picPath)
+    print("[info]图片下载成功\n")
 
 """
 获取可下载图片
@@ -100,16 +120,36 @@ def getPendingPicUrl(wallHavenUrl) -> list:
     responseRes = curlGet(wallHavenUrl)
     responseResDict = handleResponseRes(responseRes)
 
-    PendingPicUrlList = []
-    for _, PicMsg in responseResDict["data"]:
+    pendingPicUrlList = []
+    for PicMsg in responseResDict["data"]:
         PicMsgMain = {
             'id': PicMsg['id'],
             'resolution': PicMsg['resolution'],
             'url': PicMsg['path'],
+            'fileType': PicMsg['file_type'],    # image/png image/jpeg
         }
-        PendingPicUrlList.append(PicMsgMain)
+        pendingPicUrlList.append(PicMsgMain)
     
-    return PendingPicUrlList
+    return pendingPicUrlList
+
+
+"""
+下载某一页中所有图片
+download all picture in one single page
+"""
+def downloadAllPicInOnePage(pageNum):
+    print("[info]正在下载第{}页图片".format(str(pageNum)))
+
+    wallHavenUrl = wallHavenUrlBase + str(pageNum)
+
+    pendingPicUrlList = getPendingPicUrl(wallHavenUrl)
+
+    for targetPic in pendingPicUrlList:
+        downloadOnePic(targetPic)
+    
+    print("[info]第{}页图片下载完成".format(str(pageNum)))
+    
+
 
 
 """
@@ -117,14 +157,13 @@ def getPendingPicUrl(wallHavenUrl) -> list:
 main process
 """
 def WallhavenDownload():
+    # 初始化
+    # init
     init()
+
+    for pageNum in range(1, int(args.maxPage)+1):
+        downloadAllPicInOnePage(pageNum)
 
 
 if __name__ == "__main__":
-    # wget("https://w.wallhaven.cc/full/72/wallhaven-72rxqo.jpg", "72rxqo.jpg")
-    # res = curlGet('https://wallhaven.cc/api/v1/search?apikey=y6L3vWvPfZSDbxilkIiyZrM4nGZSAhST&topRange=1M&sorting=toplist&page=1')
-    # handleResponseRes(res)
-    # parserInit()
-    # args = parser.parse_args() 
-    # print(args.mode)
-    init()
+    WallhavenDownload()
