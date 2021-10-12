@@ -14,7 +14,9 @@ parser.add_argument('--savePath', required=True, help='图片保存路径')
 parser.add_argument('--maxPage', default=5, help='最大页数')
 args = parser.parse_args()
 
-APIKey = "y6L3vWvPfZSDbxilkIiyZrM4nGZSAhST"
+# 填写自己的APIkey
+# Fill in your APIkey
+APIKey = "your APIkey"
 
 wallHavenUrlBase = ""
 
