@@ -6,7 +6,7 @@ author: rjszz
 
 import subprocess, json
 import argparse
-import os
+import os, time
 
 #参数解析
 parser = argparse.ArgumentParser()
@@ -168,4 +168,6 @@ def WallhavenDownload():
 
 
 if __name__ == "__main__":
+    print("--------------" + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "-----------------")
     WallhavenDownload()
+    print("--------------END---------------")
